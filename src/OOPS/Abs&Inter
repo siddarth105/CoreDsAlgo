@@ -1,0 +1,4 @@
+Abstract Class – Default Implementation
+Eg:- HttpsServlet is an abstract class because developers do not need to implement all service methods.
+For the methods that the developer does not provide implementation, the default implementation is taken care.
+If your servlet is required to handle doGet () requests for example, there is no need to write a doPost () method too
