@@ -12,13 +12,12 @@ public class Solution {
         int[] a = numberArray;
         List<Integer> qualifiedElements = new ArrayList<>();
         for(int i = 0; i < a.length; i++) {
-          if(checkDigitsUsingSet(a[i])) {
+          if(checkDigitsUsingSet(a[i], 1)) {
             qualifiedElements.add(a[i]);
           }
         }
 
         Collections.sort(qualifiedElements);
-        /* make string out of this qualified elements boss */
         if(qualifiedElements.size() == 0) {
           return "-1";
         }
@@ -61,6 +60,30 @@ public class Solution {
           }
         }
         return false;
+    }
+    
+    
+    static boolean checkDigitsUsingSet(int number, int z) {
+
+        number = Math.abs(number);
+        List<Integer> digits = new ArrayList<>();
+
+        while(number > 0) {
+          digits.add(number % 10);
+          number /= 10;
+        }
+        boolean first = false;
+        boolean second = false;
+        boolean third = false;
+        for(int i = 0; i < digits.size(); i++) {
+        	if (digits.get(i) == 1)
+        		first = true;
+        	if (digits.get(i) == 2)
+        		second = true;
+        	if (digits.get(i) == 3)
+        		third = true;
+          }
+        return first && second && third;
     }
     
     

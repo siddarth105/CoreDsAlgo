@@ -1,6 +1,29 @@
 package Algo.DynamicPgm;
 
 public class MinJumps {
+	
+	// TIME_COMPLEXITY :: O(n^2)
+	static int minJumps(int arr[], int from[]){
+        
+        int []jump = new int[arr.length];
+        jump[0] = 0;
+        for(int i=1; i < arr.length ; i++){
+            jump[i] = Integer.MAX_VALUE-1;
+        }
+        
+        for(int i=1; i < arr.length; i++){
+            for(int j=0; j < i; j++){
+                if(arr[j] + j >= i){
+                    if(jump[i] > jump[j] + 1){
+                        from[i] = j;
+                        jump[i] = jump[j] + 1;
+                    }
+                }
+            }
+        }
+        
+        return jump[jump.length-1];
+    }
 
 	// TIME_COMPLEXITY :: O(n)
 	static int minJumps(int arr[]) {
@@ -48,7 +71,10 @@ public class MinJumps {
 
 		int[] arr = { 2, 3, 1, 1, 4};
 		//arr = new int[]{1, 3, 5, 8, 9, 2, 6, 7, 6, 8, 9};
-		System.out.println("Minimum number of jumps to reach end is : " + minJumps(arr));
+		int from[] = new int[arr.length];
+		
+		System.out.println("Minimum number of jumps to reach end is : " + minJumps(arr, from) + " -> O(n^2)");
+		System.out.println("Minimum number of jumps to reach end is : " + minJumps(arr) + " -> O(n)");
 	}
 
 }
