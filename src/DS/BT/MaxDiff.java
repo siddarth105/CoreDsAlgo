@@ -3,6 +3,9 @@ package DS.BT;
 public class MaxDiff {
 
 	TreeNode root;
+	
+	// val -> Ponits towards the minimum in all of T's child nodes
+	// r -> Max diff b/w the T and its val
 
 	int maxDiffUtil(TreeNode t, Res res) {
 		// Returning Maximum int value if node is not there (one child case)
