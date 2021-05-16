@@ -67,7 +67,7 @@ public class ArrSplit {
     	int[] A = new int[]{2, -2, -3, 3};
     	int[] B = new int[]{0, 0, 4, -4};
 	    	//int[] A = new int[]{1, 4, 2, -2, 5}; 
-	    	//int[] B = new int[]{7, -2, -2, 2, 5};
+	    	//int[] B = new int[]{7, -2, -2, 2, 5}; 1
 		System.out.println(solution(A, B));
     }
 }
