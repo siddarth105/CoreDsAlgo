@@ -15,6 +15,11 @@ public abstract class ClassA {
 		int g = 2; int x = 6;
 		System.out.println(g*x);
 	}
+	public Integer mulBy2(int var){
+		int value = var * 2;
+		System.out.println("Abstract Class :: ClassA :: " + value);
+		return value;
+	}
 	public int getL() {
 		return l;
 	}

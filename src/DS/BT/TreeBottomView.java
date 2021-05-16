@@ -5,6 +5,8 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.TreeMap;
 
+// BFS + Map
+// Post Order
 public class TreeBottomView {
 	
 	 

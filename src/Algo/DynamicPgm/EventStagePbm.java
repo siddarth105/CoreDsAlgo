@@ -1,5 +1,6 @@
 package Algo.DynamicPgm;
 
+//https://www.geeksforgeeks.org/activity-selection-problem-greedy-algo-1/
 public class EventStagePbm {
 	
 	public static int getMaxEvents(int arrival[], int duration[]) {

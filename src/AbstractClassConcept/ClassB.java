@@ -16,6 +16,20 @@ public class ClassB extends ClassA implements InterI, InterJ {
 		System.out.println(g*x);
 	}
 	
+	public Integer mulBy4(int var) {
+		int by2Value = mulBy2(var);
+		int value = by2Value * 2;
+		System.out.println("ClassB :: mulBy4 :: "+ value);
+		return value;
+	}
+	
+	public Integer mulBy6(int var) {
+		int by2Value = mulBy2(var);
+		int value = by2Value * 3;
+		System.out.println("ClassB :: mulBy6 :: "+ value);
+		return value;
+	}
+	
 	public void cancel () {
 		System.out.println("Over Riding Abstract Method");
 	}
