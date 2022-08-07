@@ -1,0 +1,7 @@
+# Default ignored files
+/shelf/
+/workspace.xml
+src/CoreDsAlgo.iml
+classes/
+.idea/misc.xml
+.idea/modules.xml
