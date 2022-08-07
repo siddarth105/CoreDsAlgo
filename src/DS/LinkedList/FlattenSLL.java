@@ -27,7 +27,7 @@ public class FlattenSLL {
 			node1.dwn = mergeLst(node1.dwn, node2);
 		} else {
 			temp = node2;
-			node2.dwn = MergeSortedSLL.mergeLst(node1, node2.dwn);
+			node2.dwn = mergeLst(node1, node2.dwn);
 		}
 		
 		return temp;

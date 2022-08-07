@@ -31,11 +31,14 @@ public class J8Stream {
 	public static void parallelProcess(List<String> lst) {
 		
 		System.out.println("Parallel Processing");
-		ForkJoinPool forkJoinPool = new ForkJoinPool(4);
+		ForkJoinPool forkJoinPool = new ForkJoinPool(2);
 		long l = System.currentTimeMillis();
-		forkJoinPool.submit(() ->
-		lst.stream().parallel().forEach(s -> J8Stream.printVal(s))).join();
+		forkJoinPool.submit(() -> parallelProcessUsingStream(lst)).join();
 		System.out.println("Time taken :: " + (System.currentTimeMillis() - l) + " ms");
+	}
+
+	public static void parallelProcessUsingStream(List<String> lst) {
+		lst.stream().parallel().forEach(s -> J8Stream.printVal(s));
 	}
 	
 	public static void serialProcess(List<String> lst) {

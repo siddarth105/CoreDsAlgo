@@ -30,7 +30,7 @@ public class MergeSortedSLL {
 			node1.next = mergeLst(node1.next, node2);
 		} else {
 			temp = node2;
-			node2.next = MergeSortedSLL.mergeLst(node1, node2.next);
+			node2.next = mergeLst(node1, node2.next);
 		}
 		
 		return temp;
