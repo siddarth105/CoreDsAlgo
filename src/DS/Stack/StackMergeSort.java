@@ -1,4 +1,4 @@
-package DS.BT;
+package DS.Stack;
 
 import java.util.Stack;
 
