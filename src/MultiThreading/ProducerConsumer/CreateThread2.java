@@ -1,4 +1,4 @@
-package MultiThreading;
+package MultiThreading.ProducerConsumer;
 
 public class CreateThread2 extends Thread {
 	

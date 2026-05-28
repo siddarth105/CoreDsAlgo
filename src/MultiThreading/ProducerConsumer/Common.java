@@ -1,9 +1,9 @@
-package MultiThreading;
+package MultiThreading.ProducerConsumer;
 
 public class Common {
 	int x;
 
-	boolean flag = true;
+	volatile boolean flag = true;
 	// if flag is true producer thread has to produce
 	// if flag is false consumer thread has to produce
 
@@ -19,7 +19,6 @@ public class Common {
 			try {
 				wait();
 			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}
@@ -31,7 +30,6 @@ public class Common {
 			try {
 				wait();
 			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 
