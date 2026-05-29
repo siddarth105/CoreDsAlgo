@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Cookie Distribution – DFS Tree</title>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', sans-serif; background: #11111b; color: #cdd6f4; padding: 20px; }
+    h1 { text-align: center; color: #89b4fa; font-size: 20px; margin-bottom: 6px; }
+    .sub { text-align: center; color: #6c7086; font-size: 13px; margin-bottom: 16px; }
+
+    .info-row { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+    .chip { background: #1e1e2e; border: 1px solid #313244; border-radius: 8px; padding: 6px 16px; font-size: 13px; }
+    .chip b { color: #89b4fa; }
+
+    .legend { display: flex; justify-content: center; gap: 18px; flex-wrap: wrap; margin-bottom: 14px; font-size: 12px; }
+    .leg-item { display: flex; align-items: center; gap: 6px; }
+    .leg-dot { width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0; }
+
+    .controls { text-align: center; margin-bottom: 10px; }
+    .controls button {
+      background: #1e1e2e; border: 1px solid #313244; color: #cdd6f4;
+      padding: 5px 14px; border-radius: 6px; cursor: pointer; font-size: 12px; margin: 0 4px;
+    }
+    .controls button:hover { background: #313244; }
+
+    .opt-path {
+      background: #1e2e1e; border: 1px solid #40a02b; border-radius: 8px;
+      padding: 10px 16px; font-size: 12px; max-width: 780px; margin: 0 auto 14px;
+      font-family: 'Courier New', monospace; color: #a6e3a1; text-align: center;
+    }
+
+    #wrap { background: #0a0a14; border: 1px solid #1e1e3a; border-radius: 12px; overflow: hidden; cursor: grab; }
+    #wrap:active { cursor: grabbing; }
+    .link { fill: none; }
+
+    .tooltip {
+      position: fixed; background: #181825; border: 1px solid #45475a;
+      border-radius: 8px; padding: 10px 14px; font-size: 12px;
+      pointer-events: none; opacity: 0; transition: opacity .15s;
+      z-index: 9999; max-width: 250px; line-height: 1.8;
+    }
+    .tt-key { color: #6c7086; font-size: 10px; text-transform: uppercase; letter-spacing: .5px; }
+    .tt-val { color: #cdd6f4; font-weight: 600; font-family: 'Courier New', monospace; }
+    .tt-prune { color: #f38ba8; margin-top: 6px; font-size: 11px; }
+    .tt-opt { display: inline-block; background: #40a02b; color: #fff; border-radius: 4px; padding: 1px 8px; font-size: 10px; margin-top: 6px; }
+  </style>
+</head>
+<body>
+
+<h1>Distribute Cookies — DFS Decision Tree</h1>
+<p class="sub">cookies = [8,15,10,20,8] → sorted desc → <b>[20,15,10,8,8]</b> &nbsp;|&nbsp; k = 2 children</p>
+
+<div class="info-row">
+  <div class="chip">Bags sorted: <b>[20, 15, 10, 8, 8]</b></div>
+  <div class="chip">Children: <b>k = 2</b></div>
+  <div class="chip">Min Unfairness: <b>31</b></div>
+  <div class="chip">Total Nodes: <b>33</b></div>
+</div>
+
+<div class="legend">
+  <div class="leg-item"><div class="leg-dot" style="background:#1e1e38;border:2px solid #89b4fa"></div>Explored</div>
+  <div class="leg-item"><div class="leg-dot" style="background:#3b0e17;border:2px solid #f38ba8"></div>Pruned (duplicate)</div>
+  <div class="leg-item"><div class="leg-dot" style="background:#3b2808;border:2px solid #e6c384"></div>Leaf – not optimal</div>
+  <div class="leg-item"><div class="leg-dot" style="background:#1a4a21;border:2px solid #a6e3a1"></div>Optimal leaf (max=31)</div>
+  <div class="leg-item"><div class="leg-dot" style="background:#0e2e1c;border:2px solid #a6e3a1"></div>On optimal path</div>
+</div>
+
+<div class="opt-path">
+  ★ Optimal path: [0,0] → [20,0] → [20,15] → [30,15] → [30,23] → <b>[30,31]</b>
+  &nbsp;|&nbsp; C0 gets: 20+10 = 30 &nbsp;|&nbsp; C1 gets: 15+8+8 = 31 &nbsp;|&nbsp; max = 31
+</div>
+
+<div class="controls">
+  <button onclick="zoomIn()">＋ Zoom In</button>
+  <button onclick="zoomOut()">－ Zoom Out</button>
+  <button onclick="resetZoom()">⟳ Reset View</button>
+</div>
+
+<div id="wrap"><svg id="svg"></svg></div>
+<div class="tooltip" id="tip"></div>
+
+<script>
+// ── Config ────────────────────────────────────────────────────────────────────
+const COOKIES = [20, 15, 10, 8, 8];
+const K       = 2;
+const MIN_UNF = 31;
+const NODE_R  = 27;
+const V_GAP   = 115;
+const H_MIN   = 72;
+const PAD     = { t: 50, r: 60, b: 50, l: 60 };
+
+// ── Build Tree ────────────────────────────────────────────────────────────────
+let uid = 0;
+
+function buildTree(dist, bi, aChild, bVal) {
+  const isLeaf = bi === COOKIES.length;
+  const maxVal = isLeaf ? Math.max(...dist) : null;
+  const nd = {
+    id: uid++, distribute: [...dist], bi, aChild, bVal,
+    pruned: false, pruneMsg: null,
+    isLeaf, maxVal, isOptimal: isLeaf && maxVal === MIN_UNF,
+    onPath: false, children: []
+  };
+  if (!isLeaf) {
+    const seen = new Map();
+    for (let i = 0; i < K; i++) {
+      const newD = [...dist];
+      newD[i] += COOKIES[bi];
+      if (seen.has(dist[i])) {
+        nd.children.push({
+          id: uid++, distribute: newD, bi: bi + 1, aChild: i, bVal: COOKIES[bi],
+          pruned: true,
+          pruneMsg: `C${i} total (${dist[i]}) = C${seen.get(dist[i])} total — duplicate state, skip`,
+          isLeaf: false, maxVal: null, isOptimal: false, onPath: false, children: []
+        });
+      } else {
+        seen.set(dist[i], i);
+        nd.children.push(buildTree(newD, bi + 1, i, COOKIES[bi]));
+      }
+    }
+  }
+  return nd;
+}
+
+const ROOT = buildTree(new Array(K).fill(0), 0, null, null);
+
+// mark nodes on optimal path bottom-up
+function markPath(nd) {
+  if (nd.isOptimal) return true;
+  if (nd.pruned || !nd.children.length) return false;
+  let found = false;
+  for (const c of nd.children) { if (markPath(c)) { c.onPath = true; found = true; } }
+  return found;
+}
+ROOT.onPath = true;
+markPath(ROOT);
+
+// ── SVG Size ──────────────────────────────────────────────────────────────────
+function countLeaves(nd) {
+  if (!nd.children.length) return 1;
+  return nd.children.reduce((s, c) => s + countLeaves(c), 0);
+}
+function treeDepth(nd) {
+  if (!nd.children.length) return 0;
+  return 1 + Math.max(...nd.children.map(treeDepth));
+}
+
+const nLeaves = countLeaves(ROOT);
+const nDepth  = treeDepth(ROOT);
+const svgW    = Math.max(960, nLeaves * H_MIN + PAD.l + PAD.r);
+const svgH    = (nDepth + 1) * V_GAP + PAD.t + PAD.b;
+
+document.getElementById('wrap').style.height = Math.min(svgH + 20, 720) + 'px';
+
+const svg    = d3.select('#svg').attr('width', svgW).attr('height', svgH);
+const zoomB  = d3.zoom().scaleExtent([0.25, 3]).on('zoom', e => gMain.attr('transform', e.transform));
+svg.call(zoomB);
+
+function zoomIn()    { svg.transition().duration(300).call(zoomB.scaleBy, 1.35); }
+function zoomOut()   { svg.transition().duration(300).call(zoomB.scaleBy, 0.75); }
+function resetZoom() { svg.transition().duration(400).call(zoomB.transform, d3.zoomIdentity); }
+
+const gMain  = svg.append('g');
+const gInner = gMain.append('g').attr('transform', `translate(${PAD.l},${PAD.t})`);
+
+// ── D3 Tree Layout ────────────────────────────────────────────────────────────
+const layout = d3.tree().size([svgW - PAD.l - PAD.r, svgH - PAD.t - PAD.b]);
+const hier   = d3.hierarchy(ROOT, d => d.children);
+layout(hier);
+
+// ── Links ─────────────────────────────────────────────────────────────────────
+gInner.selectAll('path.link')
+  .data(hier.links()).enter().append('path').attr('class', 'link')
+  .attr('d', d3.linkVertical().x(d => d.x).y(d => d.y))
+  .attr('stroke', d => {
+    const t = d.target.data;
+    if (t.pruned)               return '#f38ba8';
+    if (t.isOptimal || t.onPath) return '#a6e3a1';
+    return '#313244';
+  })
+  .attr('stroke-width', d => (d.target.data.isOptimal || d.target.data.onPath) ? 3 : 1.6)
+  .attr('stroke-dasharray', d => d.target.data.pruned ? '6,4' : null)
+  .attr('opacity', d => d.target.data.pruned ? 0.45 : 1);
+
+// ── Edge Labels ───────────────────────────────────────────────────────────────
+gInner.selectAll('text.elab')
+  .data(hier.links()).enter().append('text').attr('class', 'elab')
+  .attr('x', d => (d.source.x + d.target.x) / 2 + 6)
+  .attr('y', d => (d.source.y + d.target.y) / 2 - 5)
+  .attr('text-anchor', 'middle')
+  .attr('font-size', '9px')
+  .attr('font-family', '"Courier New",monospace')
+  .attr('fill', d => d.target.data.pruned ? '#f38ba860' : '#585b70')
+  .text(d => {
+    const t = d.target.data;
+    return t.aChild !== null ? `C${t.aChild}+${t.bVal}` : '';
+  });
+
+// ── Nodes ─────────────────────────────────────────────────────────────────────
+const nodeG = gInner.selectAll('g.node')
+  .data(hier.descendants()).enter().append('g').attr('class', 'node')
+  .attr('transform', d => `translate(${d.x},${d.y})`);
+
+nodeG.append('circle')
+  .attr('r', NODE_R)
+  .attr('fill', d => {
+    const n = d.data;
+    if (n.pruned)    return '#3b0e17';
+    if (n.isOptimal) return '#1a4a21';
+    if (n.isLeaf)    return '#3b2808';
+    if (n.onPath)    return '#0e2e1c';
+    return '#1e1e38';
+  })
+  .attr('stroke', d => {
+    const n = d.data;
+    if (n.pruned)    return '#f38ba8';
+    if (n.isOptimal) return '#a6e3a1';
+    if (n.isLeaf)    return '#e6c384';
+    if (n.onPath)    return '#a6e3a1';
+    return '#89b4fa';
+  })
+  .attr('stroke-width', 2.5);
+
+// distribute label
+nodeG.append('text')
+  .attr('text-anchor', 'middle').attr('dy', '-4')
+  .attr('font-size', '10px').attr('font-family', '"Courier New",monospace')
+  .attr('fill', d => d.data.pruned ? '#f38ba890' : '#cdd6f4')
+  .text(d => `[${d.data.distribute.join(',')}]`);
+
+// sub label
+nodeG.append('text')
+  .attr('text-anchor', 'middle').attr('dy', '10px')
+  .attr('font-size', '9px').attr('font-family', '"Courier New",monospace')
+  .attr('fill', d => {
+    const n = d.data;
+    if (n.pruned) return '#f38ba890';
+    if (n.isLeaf) return '#e6c384';
+    return '#6c7086';
+  })
+  .text(d => {
+    const n = d.data;
+    if (n.pruned) return '✗';
+    if (n.isLeaf) return `max=${n.maxVal}`;
+    return `▸${COOKIES[n.bi]}`;
+  });
+
+// optimal badge
+nodeG.filter(d => d.data.isOptimal).append('text')
+  .attr('text-anchor', 'middle').attr('dy', '23px')
+  .attr('font-size', '8px').attr('font-family', '"Courier New",monospace')
+  .attr('fill', '#a6e3a1').attr('font-weight', 'bold')
+  .text('★ OPT');
+
+// ── Tooltip ───────────────────────────────────────────────────────────────────
+const tipEl = d3.select('#tip');
+function row(k, v) {
+  return `<div><span class="tt-key">${k}</span><br><span class="tt-val">${v}</span></div>`;
+}
+
+nodeG
+  .on('mouseover', (ev, d) => {
+    const n = d.data;
+    let html = row('State', `[${n.distribute.map((v,i)=>`C${i}:${v}`).join(' | ')}]`);
+    html += row('Bags assigned', `${n.bi} / ${COOKIES.length}`);
+    if (!n.isLeaf && !n.pruned)
+      html += row('Next bag', `cookies[${n.bi}] = ${COOKIES[n.bi]}`);
+    if (n.isLeaf)
+      html += row('Unfairness', `max(${n.distribute.join(',')}) = ${n.maxVal}`);
+    if (n.pruned)
+      html += `<div class="tt-prune">⛔ ${n.pruneMsg}</div>`;
+    if (n.isOptimal)
+      html += `<div><span class="tt-opt">★ Optimal Solution!</span></div>`;
+    tipEl.html(html).style('opacity', 1)
+      .style('left', (ev.clientX + 16) + 'px')
+      .style('top',  (ev.clientY - 12) + 'px');
+  })
+  .on('mousemove', ev => {
+    tipEl.style('left', (ev.clientX + 16) + 'px')
+         .style('top',  (ev.clientY - 12) + 'px');
+  })
+  .on('mouseout', () => tipEl.style('opacity', 0));
+</script>
+</body>
+</html>
